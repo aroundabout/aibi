@@ -121,7 +121,7 @@ public class BiController {
         if (type.equals("Id")) {
             nodeValues = neo4jDao.getPersonById(Long.valueOf(id));
         } else if (type.equals("name")) {
-            nodeValues = neo4jDao.getOrganizationByName(id);
+            nodeValues = neo4jDao.getPersonByName(id);
         } else {
             nodeValues = neo4jDao.getPersonByPermId(id);
         }

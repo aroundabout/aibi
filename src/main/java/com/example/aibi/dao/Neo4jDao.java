@@ -17,7 +17,7 @@ import java.util.List;
 @Repository
 public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
     //初始化
-    @Query("match (n:ns0__Organization) return n limit 25")
+    @Query("match (n:ns4__Organization) return n limit 25")
     List<NodeValue> getInit();
 
     //通用查询 通过id查询节点
@@ -30,28 +30,28 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
 
     //查询organization
     //id
-    @Query("match (n:ns0__Organization) where id(n)=$id return n")
+    @Query("match (n:ns4__Organization) where id(n)=$id return n")
     List<NodeValue> getOrganizationById(Long id);
 
     //permId
-    @Query("match (n:ns0__Organization) where n.ns1__hasPermId=$permId return n")
+    @Query("match (n:ns4__Organization) where n.ns1__hasPermId=$permId return n")
     List<NodeValue> getOrganizationByPermId(String permId);
 
     //name
-    @Query("match(n:ns0__Organization) where n.`ns3__organization-name` contains $name return n limit 25")
+    @Query("match(n:ns4__Organization) where n.`ns6__organization-name` contains $name return n limit 25")
     List<NodeValue> getOrganizationByName(String name);
 
     //查询person
     //id
-    @Query("match (n:ns6__Person) where id(n)=$id return n")
+    @Query("match (n:ns8__Person) where id(n)=$id return n")
     List<NodeValue> getPersonById(Long id);
 
     //permId
-    @Query("match (n:ns6__Person) where n.ns1__hasPermId=$permId return n")
+    @Query("match (n:ns8__Person) where n.ns1__hasPermId=$permId return n")
     List<NodeValue> getPersonByPermId(String permId);
 
     //name
-    @Query("match (n:ns6__Person) where n.`ns3__family-name` contains $name or n.`ns3__given-name` contains $name return n limit 25")
+    @Query("match (n:ns8__Person) where n.`ns6__family-name` contains $name or n.`ns6__given-name` contains $name return n limit 25")
     List<NodeValue> getPersonByName(String name);
 
     //拓展查询
@@ -63,7 +63,7 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
     @Query("match (n)-[r]-(p) where id(n)=$id return r limit 25")
     List<RelationshipValue> getExtendR(Long id);
 
-    //
-    @Query("match data=(p:ns6__Person{ns1__hasPermId:$permId})-[*1..3]-(e) WHERE apoc.coll.duplicates(NODES(data)) = [] return data limit 25")
+    //step查询
+    @Query("match data=(p:ns8__Person{ns1__hasPermId:$permId})-[*1..2]-(e) WHERE apoc.coll.duplicates(NODES(data)) = [] return data limit 25")
     List<PathValue> getStep(String permId, int step);
 }
