@@ -1,0 +1,8 @@
+.idea
+*.iws
+*.iml
+*.ipr
+.mvn
+mvnw*
+target
+src/mian/resoueces/application.properties
