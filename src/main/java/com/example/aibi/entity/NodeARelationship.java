@@ -21,7 +21,7 @@ public class NodeARelationship {
         this.nodeEntities = nodeEntities;
     }
 
-    public void setRelationships(List<RelationshipEntity> relationshipEntities) {
+    public void setRelationshipEntities(List<RelationshipEntity> relationshipEntities) {
         this.relationshipEntities = relationshipEntities;
     }
 
@@ -29,7 +29,7 @@ public class NodeARelationship {
         return nodeEntities;
     }
 
-    public List<RelationshipEntity> getRelationships() {
+    public List<RelationshipEntity> getRelationshipEntities() {
         return relationshipEntities;
     }
 }

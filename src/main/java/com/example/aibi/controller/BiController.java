@@ -6,6 +6,7 @@ import com.example.aibi.entity.NodeARelationship;
 import com.example.aibi.entity.NodeEntity;
 import com.example.aibi.entity.RelationshipEntity;
 import com.example.aibi.entity.Result;
+import com.example.aibi.util.NodeUtils;
 import com.example.aibi.util.TransNodeEntity;
 import org.neo4j.driver.internal.value.*;
 import org.neo4j.driver.types.Node;
@@ -26,6 +27,7 @@ public class BiController {
     @Autowired
     private Neo4jDao neo4jDao;
 
+    //转换nodevalue到nodeentity
     private List<NodeEntity> valueListToEntityList(List<NodeValue> nodeValues) {
         List<NodeEntity> nodeEntityList = new ArrayList<>();
         for (NodeValue nodeValue : nodeValues) {
@@ -36,6 +38,7 @@ public class BiController {
         return nodeEntityList;
     }
 
+    //relationvalue到entity
     private List<RelationshipEntity> shipListToEntityList(List<RelationshipValue> relationshipValues) {
         List<RelationshipEntity> relationshipEntities = new ArrayList<>();
         for (RelationshipValue relationshipValue : relationshipValues) {
@@ -46,7 +49,8 @@ public class BiController {
         return relationshipEntities;
     }
 
-    private NodeARelationship pathToReuslt(List<PathValue> list){
+    //pathvalue到Node and relation
+    private NodeARelationship pathToReuslt(List<PathValue> list) {
         Set<NodeEntity> nodeEntities = new HashSet<>();
         Set<RelationshipEntity> relationshipEntities = new HashSet<>();
         for (PathValue pathValue : list) {
@@ -78,6 +82,7 @@ public class BiController {
         return nodeARelationship;
     }
 
+    //缓存中读取
     private List<NodeEntity> redisGetNode(Long id) {
         if (redisDao.hasKey(id.toString())) {
             List<NodeEntity> list = new ArrayList<>();
@@ -89,6 +94,7 @@ public class BiController {
         }
     }
 
+    //read in cache
     private List<RelationshipEntity> redisGetRelationship(Long id) {
         if (redisDao.hasKey(id.toString())) {
             List<RelationshipEntity> list = new ArrayList<>();
@@ -100,14 +106,64 @@ public class BiController {
         }
     }
 
-    //测试用api 基本不用
-    @RequestMapping(value = "/redis/hello/{id}", method = RequestMethod.GET)
-    public Result<Object> hello(@PathVariable String id) {
-        String ss = "haha";
-        redisDao.set(id, ss);
-        String s = (String) redisDao.get(id);
-        return new Result().builder().code(200).data(s).msg("hello").build();
+    //query0
+    @RequestMapping(value = "/query0/node/{label}/{id}")
+    public Result query0(@PathVariable Long id, @PathVariable String label) {
+        List<PathValue> list;
+        if (label.equals(NodeUtils.labels.get(0))) {
+            list=neo4jDao.query0person(id);
+        }else if(label.equals(NodeUtils.labels.get(1))){
+            list=neo4jDao.query0Organization(id);
+        }else if(label.equals(NodeUtils.labels.get(2))){
+            list=neo4jDao.query0TenureInOrganization(id);
+        }else if(label.equals(NodeUtils.labels.get(3))){
+            list=neo4jDao.query0Officership(id);
+        }else if(label.equals(NodeUtils.labels.get(4))){
+            list=neo4jDao.query0Directorship(id);
+        }else {
+            return new Result().builder().code(404).msg("no resource").data(null).build();
+        }
+        NodeARelationship nodeARelationship;
+        if(list.size()==0){
+            nodeARelationship=new NodeARelationship();
+        }else {
+            nodeARelationship=pathToReuslt(list);
+        }
+        return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
     }
+
+    //query1
+    @RequestMapping(value = "/query1/{nodeType}/type/{type}/{typeValue}/limit/{limit}")
+    public Result query1(@PathVariable int limit,
+                         @PathVariable String nodeType,
+                         @PathVariable String type,
+                         @PathVariable String typeValue){
+        limit=Math.min(100,limit);
+        List<PathValue> list = null;
+        if (nodeType.equals("ns8__Person")){
+            if(type.equals("permId")){
+                list=neo4jDao.query1PersonPermId(typeValue,limit);
+            }else if(type.equals("name")){
+                list=neo4jDao.query1PersonName(typeValue,limit);
+            }
+        }else if(nodeType.equals("ns4__Organization")){
+            if(type.equals("permId")){
+                list=neo4jDao.query1OrganizationPermId(typeValue,limit);
+            }else if(type.equals("name")){
+                list=neo4jDao.query1OrganizationName(typeValue,limit);
+            }
+        }
+        NodeARelationship nodeARelationship;
+        assert list != null;
+        if(list.size()==0){
+            nodeARelationship=new NodeARelationship();
+        }else {
+            nodeARelationship=pathToReuslt(list);
+        }
+        return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
+    }
+
+
 
     //初始化
     @RequestMapping(value = "/init", method = RequestMethod.GET)
@@ -184,9 +240,9 @@ public class BiController {
                 List<RelationshipEntity> relationshipEntities = redisGetRelationship(Long.valueOf((String) o));
                 returnRelationshipEntities.addAll(relationshipEntities);
             }
-            nodeARelationship.setRelationships(returnRelationshipEntities);
+            nodeARelationship.setRelationshipEntities(returnRelationshipEntities);
         }
-        if (nodeARelationship.getRelationships().size() + nodeARelationship.getNodeEntities().size() != 0) {
+        if (nodeARelationship.getRelationshipEntities().size() + nodeARelationship.getNodeEntities().size() != 0) {
             return new Result().builder()
                     .code(200)
                     .msg("return return relationships and nodes for redis")
@@ -204,7 +260,7 @@ public class BiController {
         for (RelationshipEntity relationshipEntity : relationshipEntities) {
             redisDao.setAdd("relationship" + id.toString(), relationshipEntity.getId().toString());
         }
-        nodeARelationship.setRelationships(relationshipEntities);
+        nodeARelationship.setRelationshipEntities(relationshipEntities);
         nodeARelationship.setNodeEntities(nodeEntities);
         return new Result().builder().code(200).msg("return relationships and nodes").data(nodeARelationship).build();
     }
@@ -213,26 +269,23 @@ public class BiController {
     @RequestMapping(value = "/step/{permId}/{step}", method = RequestMethod.GET)
     public Result<Object> getStep(@PathVariable String permId, @PathVariable int step) {
         List<PathValue> list = neo4jDao.getStep(permId, step);
-        NodeARelationship nodeARelationship=pathToReuslt(list);
+        NodeARelationship nodeARelationship = pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
     }
 
     @RequestMapping(value = "/organization/person/{permId}")
-    public Result<Object> getPersonToOrganization(@PathVariable String permId){
-        List<PathValue> list=neo4jDao.getPersonToOrganization(permId);
-        NodeARelationship nodeARelationship=pathToReuslt(list);
+    public Result<Object> getPersonToOrganization(@PathVariable String permId) {
+        List<PathValue> list = neo4jDao.getPersonToOrganization(permId);
+        NodeARelationship nodeARelationship = pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
     }
 
     @RequestMapping(value = "/person/organization/{permId}")
-    public Result<Object> getOrganizationToPerson(@PathVariable String permId){
-        List<PathValue> list=neo4jDao.getOrganizationToPerson(permId);
-        NodeARelationship nodeARelationship=pathToReuslt(list);
+    public Result<Object> getOrganizationToPerson(@PathVariable String permId) {
+        List<PathValue> list = neo4jDao.getOrganizationToPerson(permId);
+        NodeARelationship nodeARelationship = pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
     }
-
-
-
 
 
 }
