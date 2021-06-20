@@ -203,7 +203,28 @@ public class BiController {
                          @PathVariable String type2,
                          @PathVariable String typeValue1,
                          @PathVariable String typeValue2) {
-        return null;
+        if ((type1.equals("ns4__Organization") || type1.equals("ns8__Person"))
+        &&(type2.equals("ns4__Organization") || type2.equals("ns8__Person"))){
+            List<PathValue> list = null;
+            if(type1.equals(type2)){
+                if(type1.equals("ns8__Person")){
+                    list=neo4jDao.query3ShortestPathPerson(typeValue1,typeValue2);
+                }
+                else {
+                    list = neo4jDao.query3ShortestPathOrganization(typeValue1, typeValue2);
+                }
+            }else {
+                if (type1.equals("ns8__Person")){
+                    list = neo4jDao.query3ShortestPath(typeValue1, typeValue2);
+                }else {
+                    list = neo4jDao.query3ShortestPath(typeValue2, typeValue1);
+                }
+            }
+            NodeARelationship nodeARelationship=pathToReuslt(list);
+            return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
+        }
+        return new Result().builder().code(400).msg("不允许的输入").data(null).build();
+
     }
 
 

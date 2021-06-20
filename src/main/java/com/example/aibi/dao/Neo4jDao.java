@@ -92,9 +92,29 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
             "return data limit $limit")
     List<PathValue> query2Diff(String permId1,String permId2,int limit);
 
-    @Query("match")
-    List<PathValue> query3();
+    @Query("match (p1),(p2),p=shortestpath((p1)-[*..10]-(p2)) " +
+            "where p1: ns8__Person and p1.ns1__hasPermId=$permId1 " +
+            "and p2: ns8__Person and p2.ns1__hasPermId=$permId2 " +
+            "and all (x in nodes(p) where x:ns8__Person or x:ns4__Organization or x:ns8__TenureInOrganization " +
+            "or x:ns8__Directorship or x:ns8__Officership) " +
+            "return p")
+    List<PathValue> query3ShortestPathPerson(String permId1, String permId2);
 
+    @Query("match (p1),(p2),p=shortestpath((p1)-[*..10]-(p2)) " +
+            "where p1: ns4__Organization and p1.ns1__hasPermId=$permId1 " +
+            "and p2: ns4__Organization and p2.ns1__hasPermId=$permId2 " +
+            "and all (x in nodes(p) where x:ns8__Person or x:ns4__Organization or x:ns8__TenureInOrganization " +
+            "or x:ns8__Directorship or x:ns8__Officership) " +
+            "return p")
+    List<PathValue> query3ShortestPathOrganization(String permId1, String permId2);
+
+    @Query("match (p1),(p2),p=shortestpath((p1)-[*..10]-(p2)) " +
+            "where p1: ns8__Person and p1.ns1__hasPermId=$permId1 " +
+            "and p2: ns4__Organization and p2.ns1__hasPermId=$permId2 " +
+            "and all (x in nodes(p) where x:ns8__Person or x:ns4__Organization or x:ns8__TenureInOrganization " +
+            "or x:ns8__Directorship or x:ns8__Officership) " +
+            "return p")
+    List<PathValue> query3ShortestPath(String permId1, String permId2);
 
 
     //Deprecated
