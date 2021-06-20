@@ -2,10 +2,8 @@ package com.example.aibi.controller;
 
 import com.example.aibi.dao.Neo4jDao;
 import com.example.aibi.dao.RedisDao;
-import com.example.aibi.entity.NodeARelationship;
-import com.example.aibi.entity.NodeEntity;
-import com.example.aibi.entity.RelationshipEntity;
-import com.example.aibi.entity.Result;
+import com.example.aibi.entity.*;
+import com.example.aibi.service.RuleService;
 import com.example.aibi.util.NodeUtils;
 import com.example.aibi.util.TransNodeEntity;
 import org.neo4j.driver.internal.value.*;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 @RestController
@@ -26,6 +25,8 @@ public class BiController {
     private RedisDao redisDao;
     @Autowired
     private Neo4jDao neo4jDao;
+    @Autowired
+    private RuleService ruleService;
 
     //转换nodevalue到nodeentity
     private List<NodeEntity> valueListToEntityList(List<NodeValue> nodeValues) {
@@ -104,6 +105,21 @@ public class BiController {
             List<RelationshipValue> list = neo4jDao.getRelationshipById(id);
             return shipListToEntityList(list);
         }
+    }
+
+    // personPoint
+    @RequestMapping(value = "/personTest")
+    public Result persontest() throws UnsupportedEncodingException {
+        Person person = new Person();
+        person.setCountAca(2);
+        person.setCountDirec(3);
+        person.setCountOfficer(3);
+        person.setCountTenure(3);
+        Company company = new Company();
+        company.setPersonScale(241);
+        ruleService.rule(company);
+        System.out.println(company.getPoint());
+        return new Result().builder().code(200).msg("get data").data(null).build();
     }
 
     //query0
