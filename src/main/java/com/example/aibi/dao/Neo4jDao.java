@@ -1,5 +1,6 @@
 package com.example.aibi.dao;
 
+import com.example.aibi.entity.NodeEntity;
 import com.example.aibi.entity.Organization;
 import org.neo4j.driver.internal.value.NodeValue;
 import org.neo4j.driver.internal.value.PathValue;
@@ -141,6 +142,16 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
             "where id(n)=$id " +
             "RETURN count(p)")
     int queryPersonOfficership(Long id);
+
+    @Query("match data=(n:ns8__Person)-[]-(:ns8__Directorship)-[]-(r:ns8__DirectorRole) " +
+            "where id(n)=$id " +
+            "return r limit 10")
+    List<NodeValue> queryDirectorRank(Long id);
+
+    @Query("match data=(n:ns8__Person)-[]-(:ns8__Directorship)-[]-(r:ns8__DirectorRole) " +
+            "where id(n)=$id " +
+            "return r limit 10")
+    List<NodeValue> queryOfficeRank(Long id);
     //company
     //scale
     @Query("match (n:ns4__Organization)-[]-(o)-[]-(p:ns8__Person) " +

@@ -12,6 +12,7 @@ public class Person {
     private int countOfficer;
     private int countDirec;
     private double point;
+    private int rank;
 
     public int getCountAca() {
         return countAca;
@@ -52,4 +53,13 @@ public class Person {
     public void setPoint(double point) {
         this.point = point;
     }
+
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
+    }
+
 }
