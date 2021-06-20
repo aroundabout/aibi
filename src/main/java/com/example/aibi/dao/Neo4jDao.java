@@ -17,28 +17,91 @@ import java.util.List;
 @Repository
 public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
     //query0 查询person周围的节点
-    @Query("match data=(p:ns8__Person)-[]-(m)-[]-(o:ns4__Organization) where(id(p)=$id and (m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) ) return data  limit 100")
+    @Query("match data=(p:ns8__Person)-[]-(m)-[]-(o:ns4__Organization) " +
+            "where(id(p)=$id and (m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship)) " +
+            "return data  limit 100")
     List<PathValue> query0person(Long id);
     //query0 查询organization
-    @Query("match data=(p:ns8__Person)-[]-(m)-[]-(o:ns4__Organization) where(id(o)=$id and (m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) ) return data  limit 100")
+    @Query("match data=(p:ns8__Person)-[]-(m)-[]-(o:ns4__Organization) " +
+            "where(id(o)=$id and (m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship)) " +
+            "return data  limit 100")
     List<PathValue> query0Organization(Long id);
-    @Query("match  data=(n:ns8__TenureInOrganization)-[]-(m) where (id(n)=$id and (m:ns8__Person or m:ns4__Organization))  return data limit 100")
+    @Query("match  data=(n:ns8__TenureInOrganization)-[]-(m) " +
+            "where (id(n)=$id and (m:ns8__Person or m:ns4__Organization)) " +
+            "return data limit 100")
     List<PathValue> query0TenureInOrganization(Long id);
-    @Query("match  data=(n:ns8__Officership)-[]-(m) where (id(n)=$id and (m:ns8__Person or m:ns4__Organization or m:ns8__OfficerRole))  return data limit 100")
+    @Query("match  data=(n:ns8__Officership)-[]-(m) " +
+            "where (id(n)=$id and (m:ns8__Person or m:ns4__Organization or m:ns8__OfficerRole)) " +
+            "return data limit 100 ")
     List<PathValue> query0Officership(Long id);
-    @Query("match  data=(n:ns8__Directorship)-[]-(m) where (id(n)=$id and (m:ns8__Person or m:ns4__Organization or m:ns8__DirectorRole))  return data limit 100")
+    @Query("match  data=(n:ns8__Directorship)-[]-(m)" +
+            " where (id(n)=$id and (m:ns8__Person or m:ns4__Organization or m:ns8__DirectorRole))" +
+            " return data limit 100")
     List<PathValue> query0Directorship(Long id);
 
     //query1
     //查询person to organizaition
-    @Query("match data=(n:ns8__Person{ns1__hasPermId:$permId})-[]-(m)-[]-(p:ns4__Organization) where(m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) return data limit $limit")
+    //permId
+    @Query("match data=(n:ns8__Person{ns1__hasPermId:$permId})-[]-(m)-[]-(p:ns4__Organization) " +
+            "where(m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) " +
+            "and apoc.coll.duplicates(NODES(data)) = [] " +
+            "return data limit $limit")
     List<PathValue> query1PersonPermId(String permId,int limit);
-    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization) where( (n.`ns6__family-name` contains $name or n.`ns6__given-name` contains $name) and( m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship)) return data limit $limit")
+    //name
+    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization) " +
+            "where((n.`ns6__family-name` contains $name or n.`ns6__given-name` contains $name) " +
+            "and( m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship)) " +
+            "and apoc.coll.duplicates(NODES(data)) = [] " +
+            "return data limit $limit")
     List<PathValue> query1PersonName(String name,int limit);
-    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization{ns1__hasPermId:$permId}) where(m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) return data limit $limit")
+    //查询 organizaition to person
+    //permId
+    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization{ns1__hasPermId:$permId}) " +
+            "where(m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) " +
+            "and apoc.coll.duplicates(NODES(data)) = [] " +
+            "return data limit $limit")
     List<PathValue> query1OrganizationPermId(String permId,int limit);
-    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization) where( (p.`ns6__organization-name` contains $name ) and( m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship)) return data limit $limit")
-    List<PathValue> query1OrganizationName(String permId,int limit);
+    //name
+    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization) " +
+            "where( (p.`ns6__organization-name` contains $name ) " +
+            "and( m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship)) " +
+            "and apoc.coll.duplicates(NODES(data)) = [] " +
+            "return data limit $limit")
+    List<PathValue> query1OrganizationName(String name,int limit);
+
+    //query2
+    //查询
+    @Query("match data=(p1:ns8__Person)-[]-(o1)-[]-(o:ns4__Organization)-[]-(o2)-[]-(p2:ns8__Person) " +
+            "where p1.ns1__hasPermId=$permId1 and p2.ns1__hasPermId=$permId2 " +
+            "and (o1:ns8__TenureInOrganization or o1:ns8__Officership or o1:ns8__Directorship) " +
+            "and (o2:ns8__TenureInOrganization or o2:ns8__Officership or o2:ns8__Directorship) " +
+            "and apoc.coll.duplicates(NODES(data)) = []" +
+            "return data limit $limit")
+    List<PathValue> query2SamePerson(String permId1,String permId2, int limit);
+    @Query("match data=(p1:ns4__Organization)-[]-(o1)-[]-(o:ns8__Person)-[]-(o2)-[]-(p2:ns4__Organization) " +
+            "where p1.ns1__hasPermId=$permId1 and p2.ns1__hasPermId=$permId2 and " +
+            "and (o1:ns8__TenureInOrganization or o1:ns8__Officership or o1:ns8__Directorship) " +
+            "and (o2:ns8__TenureInOrganization or o2:ns8__Officership or o2:ns8__Directorship) " +
+            "and apoc.coll.duplicates(NODES(data)) = []" +
+            "return data limit $limit")
+    List<PathValue> query2SameOrganization(String permId1,String permId2, int limit);
+    @Query("match data=(o1:ns4__Organization)-[]-(m)-[]-(o2:ns8__Person) " +
+            "where o1.ns1__hasPermId=$permId1 and o2.ns1__hasPermId=$permId2 " +
+            "and (m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) " +
+            "and apoc.coll.duplicates(NODES(data)) = [] " +
+            "return data limit $limit")
+    List<PathValue> query2Diff(String permId1,String permId2,int limit);
+
+    @Query("match")
+    List<PathValue> query3();
+
+
+
+    //Deprecated
+    //Deprecated
+    //Deprecated
+    //Deprecated
+    //Deprecated
 
     //初始化
     @Query("match (n:ns4__Organization) return n limit 25")

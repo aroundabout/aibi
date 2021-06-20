@@ -49,6 +49,11 @@ public class BiController {
         return relationshipEntities;
     }
 
+    //获得分数
+    private int getScore(int i){
+        return i;
+    }
+
     //pathvalue到Node and relation
     private NodeARelationship pathToReuslt(List<PathValue> list) {
         Set<NodeEntity> nodeEntities = new HashSet<>();
@@ -65,6 +70,7 @@ public class BiController {
                 for (String s : keys) {
                     hashMap.put(s, node.get(s).toString());
                 }
+                hashMap.put("score",getScore((int) node.id()));
                 nodeEntity.setProperties(hashMap);
                 nodeEntities.add(nodeEntity);
             }
@@ -77,9 +83,7 @@ public class BiController {
                 relationshipEntities.add(relationshipEntity);
             }
         }
-        NodeARelationship nodeARelationship =
-                new NodeARelationship(new ArrayList<>(nodeEntities), new ArrayList<>(relationshipEntities));
-        return nodeARelationship;
+        return new NodeARelationship(new ArrayList<>(nodeEntities), new ArrayList<>(relationshipEntities));
     }
 
     //缓存中读取
@@ -111,23 +115,23 @@ public class BiController {
     public Result query0(@PathVariable Long id, @PathVariable String label) {
         List<PathValue> list;
         if (label.equals(NodeUtils.labels.get(0))) {
-            list=neo4jDao.query0person(id);
-        }else if(label.equals(NodeUtils.labels.get(1))){
-            list=neo4jDao.query0Organization(id);
-        }else if(label.equals(NodeUtils.labels.get(2))){
-            list=neo4jDao.query0TenureInOrganization(id);
-        }else if(label.equals(NodeUtils.labels.get(3))){
-            list=neo4jDao.query0Officership(id);
-        }else if(label.equals(NodeUtils.labels.get(4))){
-            list=neo4jDao.query0Directorship(id);
-        }else {
+            list = neo4jDao.query0person(id);
+        } else if (label.equals(NodeUtils.labels.get(1))) {
+            list = neo4jDao.query0Organization(id);
+        } else if (label.equals(NodeUtils.labels.get(2))) {
+            list = neo4jDao.query0TenureInOrganization(id);
+        } else if (label.equals(NodeUtils.labels.get(3))) {
+            list = neo4jDao.query0Officership(id);
+        } else if (label.equals(NodeUtils.labels.get(4))) {
+            list = neo4jDao.query0Directorship(id);
+        } else {
             return new Result().builder().code(404).msg("no resource").data(null).build();
         }
         NodeARelationship nodeARelationship;
-        if(list.size()==0){
-            nodeARelationship=new NodeARelationship();
-        }else {
-            nodeARelationship=pathToReuslt(list);
+        if (list.size() == 0) {
+            nodeARelationship = new NodeARelationship();
+        } else {
+            nodeARelationship = pathToReuslt(list);
         }
         return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
     }
@@ -137,33 +141,77 @@ public class BiController {
     public Result query1(@PathVariable int limit,
                          @PathVariable String nodeType,
                          @PathVariable String type,
-                         @PathVariable String typeValue){
-        limit=Math.min(100,limit);
+                         @PathVariable String typeValue) {
+        limit = Math.min(100, limit);
         List<PathValue> list = null;
-        if (nodeType.equals("ns8__Person")){
-            if(type.equals("permId")){
-                list=neo4jDao.query1PersonPermId(typeValue,limit);
-            }else if(type.equals("name")){
-                list=neo4jDao.query1PersonName(typeValue,limit);
+        if (nodeType.equals("ns8__Person")) {
+            if (type.equals("permId")) {
+                list = neo4jDao.query1PersonPermId(typeValue, limit);
+            } else if (type.equals("name")) {
+                list = neo4jDao.query1PersonName(typeValue, limit);
             }
-        }else if(nodeType.equals("ns4__Organization")){
-            if(type.equals("permId")){
-                list=neo4jDao.query1OrganizationPermId(typeValue,limit);
-            }else if(type.equals("name")){
-                list=neo4jDao.query1OrganizationName(typeValue,limit);
+        } else if (nodeType.equals("ns4__Organization")) {
+            if (type.equals("permId")) {
+                list = neo4jDao.query1OrganizationPermId(typeValue, limit);
+            } else if (type.equals("name")) {
+                list = neo4jDao.query1OrganizationName(typeValue, limit);
             }
         }
         NodeARelationship nodeARelationship;
         assert list != null;
-        if(list.size()==0){
-            nodeARelationship=new NodeARelationship();
-        }else {
-            nodeARelationship=pathToReuslt(list);
+        if (list.size() == 0) {
+            nodeARelationship = new NodeARelationship();
+        } else {
+            nodeARelationship = pathToReuslt(list);
         }
         return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
     }
 
+    @RequestMapping(value = "/query2/node1/{type1}/{typeValue1}/node2/{type2}/{typeValue2}/limit/{limit}")
+    public Result query2(@PathVariable int limit,
+                         @PathVariable String type1,
+                         @PathVariable String type2,
+                         @PathVariable String typeValue1,
+                         @PathVariable String typeValue2) {
+        limit = Math.min(100, limit);
+        List<PathValue> list;
+        if(type1.equals(type2)){
+            if (type1.equals("ns8__Person")){
+                list=neo4jDao.query2SamePerson(typeValue1,typeValue2,limit);
+            }else {
+                list=neo4jDao.query2SameOrganization(typeValue1,typeValue2,limit);
+            }
+        }else {
+            if (type1.equals("ns8__Person")){
+                list=neo4jDao.query2Diff(typeValue2,typeValue1,limit);
+            }else {
+                list=neo4jDao.query2Diff(typeValue1,typeValue2,limit);
+            }
+        }
+        NodeARelationship nodeARelationship;
+        assert list != null;
+        if (list.size() == 0) {
+            nodeARelationship = new NodeARelationship();
+        } else {
+            nodeARelationship = pathToReuslt(list);
+        }
+        return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
+    }
 
+    @RequestMapping(value = "/query3/node1/{type1}/{typeValue1}/node2/{type2}/{typeValue2}")
+    public Result query3(@PathVariable String type1,
+                         @PathVariable String type2,
+                         @PathVariable String typeValue1,
+                         @PathVariable String typeValue2) {
+        return null;
+    }
+
+
+    //Deprecated
+    //Deprecated
+    //Deprecated
+    //Deprecated
+    //Deprecated
 
     //初始化
     @RequestMapping(value = "/init", method = RequestMethod.GET)
