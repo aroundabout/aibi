@@ -46,6 +46,38 @@ public class BiController {
         return relationshipEntities;
     }
 
+    private NodeARelationship pathToReuslt(List<PathValue> list){
+        Set<NodeEntity> nodeEntities = new HashSet<>();
+        Set<RelationshipEntity> relationshipEntities = new HashSet<>();
+        for (PathValue pathValue : list) {
+            Iterable<Node> nodes = pathValue.asPath().nodes();
+            Iterable<Relationship> relationships = pathValue.asPath().relationships();
+            for (Node node : nodes) {
+                NodeEntity nodeEntity = new NodeEntity();
+                nodeEntity.setId(node.id());
+                nodeEntity.setLabels((ArrayList<String>) node.labels());
+                var keys = node.keys();
+                HashMap<String, Object> hashMap = new HashMap<>();
+                for (String s : keys) {
+                    hashMap.put(s, node.get(s).toString());
+                }
+                nodeEntity.setProperties(hashMap);
+                nodeEntities.add(nodeEntity);
+            }
+            for (Relationship relationship : relationships) {
+                RelationshipEntity relationshipEntity = new RelationshipEntity();
+                relationshipEntity.setId(relationship.id());
+                relationshipEntity.setStartId(relationship.startNodeId());
+                relationshipEntity.setEndId(relationship.endNodeId());
+                relationshipEntity.setType(relationship.type());
+                relationshipEntities.add(relationshipEntity);
+            }
+        }
+        NodeARelationship nodeARelationship =
+                new NodeARelationship(new ArrayList<>(nodeEntities), new ArrayList<>(relationshipEntities));
+        return nodeARelationship;
+    }
+
     private List<NodeEntity> redisGetNode(Long id) {
         if (redisDao.hasKey(id.toString())) {
             List<NodeEntity> list = new ArrayList<>();
@@ -181,40 +213,26 @@ public class BiController {
     @RequestMapping(value = "/step/{permId}/{step}", method = RequestMethod.GET)
     public Result<Object> getStep(@PathVariable String permId, @PathVariable int step) {
         List<PathValue> list = neo4jDao.getStep(permId, step);
-        Set<NodeEntity> nodeEntities = new HashSet<>();
-        Set<RelationshipEntity> relationshipEntities = new HashSet<>();
-        for (PathValue pathValue : list) {
-            Iterable<Node> nodes = pathValue.asPath().nodes();
-            Iterable<Relationship> relationships = pathValue.asPath().relationships();
-            for (Node node : nodes) {
-                NodeEntity nodeEntity = new NodeEntity();
-                nodeEntity.setId(node.id());
-                nodeEntity.setLabels((ArrayList<String>) node.labels());
-                var keys = node.keys();
-                HashMap<String, Object> hashMap = new HashMap<>();
-                for (String s : keys) {
-                    hashMap.put(s, node.get(s).toString());
-                }
-                nodeEntity.setProperties(hashMap);
-                nodeEntities.add(nodeEntity);
-            }
-            for (Relationship relationship : relationships) {
-                RelationshipEntity relationshipEntity = new RelationshipEntity();
-                relationshipEntity.setId(relationship.id());
-                relationshipEntity.setStartId(relationship.startNodeId());
-                relationshipEntity.setEndId(relationship.endNodeId());
-                relationshipEntity.setType(relationship.type());
-                relationshipEntities.add(relationshipEntity);
-            }
-        }
-
-//        Set<NodeEntity> tempset = new HashSet<>(nodeEntities);
-//        Set<RelationshipEntity> tempset2=new HashSet<>(relationshipEntities);
-
-        NodeARelationship nodeARelationship =
-                new NodeARelationship(new ArrayList<>(nodeEntities), new ArrayList<>(relationshipEntities));
+        NodeARelationship nodeARelationship=pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
     }
+
+    @RequestMapping(value = "/organization/person/{permId}")
+    public Result<Object> getPersonToOrganization(@PathVariable String permId){
+        List<PathValue> list=neo4jDao.getPersonToOrganization(permId);
+        NodeARelationship nodeARelationship=pathToReuslt(list);
+        return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
+    }
+
+    @RequestMapping(value = "/person/organization/{permId}")
+    public Result<Object> getOrganizationToPerson(@PathVariable String permId){
+        List<PathValue> list=neo4jDao.getOrganizationToPerson(permId);
+        NodeARelationship nodeARelationship=pathToReuslt(list);
+        return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
+    }
+
+
+
 
 
 }

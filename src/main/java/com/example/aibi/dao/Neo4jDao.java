@@ -66,4 +66,12 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
     //step查询
     @Query("match data=(p:ns8__Person{ns1__hasPermId:$permId})-[*1..2]-(e) WHERE apoc.coll.duplicates(NODES(data)) = [] return data limit 25")
     List<PathValue> getStep(String permId, int step);
+
+    //查询person到organization
+    @Query("match data=(n:ns8__Person{ns1__hasPermId:$permId})-[]-(m)-[]-(p:ns4__Organization) where(m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) return data limit 10")
+    List<PathValue> getPersonToOrganization(String permId);
+
+    //查询person到organization
+    @Query("match data=(n:ns8__Person)-[]-(m)-[]-(p:ns4__Organization{ns1__hasPermId:$permId}) where(m:ns8__TenureInOrganization or m:ns8__Officership or m:ns8__Directorship) return data limit 10")
+    List<PathValue> getOrganizationToPerson(String permId);
 }
