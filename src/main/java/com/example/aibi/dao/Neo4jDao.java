@@ -92,6 +92,9 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
             "return data limit $limit")
     List<PathValue> query2Diff(String permId1,String permId2,int limit);
 
+
+    //query3
+    //两个same 一个diff
     @Query("match (p1),(p2),p=shortestpath((p1)-[*..10]-(p2)) " +
             "where p1: ns8__Person and p1.ns1__hasPermId=$permId1 " +
             "and p2: ns8__Person and p2.ns1__hasPermId=$permId2 " +
@@ -115,6 +118,36 @@ public interface Neo4jDao extends Neo4jRepository<Organization, Long> {
             "or x:ns8__Directorship or x:ns8__Officership) " +
             "return p")
     List<PathValue> query3ShortestPath(String permId1, String permId2);
+
+    //query for score
+    //person
+    //aq
+    @Query("MATCH data=(n:ns8__Person)-[]-(p:ns8__AcademicQualification) " +
+            "where id(n)=$id " +
+            "RETURN count(data)")
+    int queryPersonAQ(Long id);
+
+    @Query("MATCH (n:ns8__Person)-[]->(p:ns8__Directorship) " +
+            "where id(n)=$id " +
+            "RETURN count(p)")
+    int queryPersonDirectorship(Long id);
+
+    @Query("MATCH (n:ns8__Person)-[]->(p:ns8__TenureInOrganization) " +
+            "where id(n)=$id " +
+            "RETURN count(p)")
+    int queryPersonTenure(Long id);
+
+    @Query("MATCH (n:ns8__Person)-[]->(p:ns8__Officership) " +
+            "where id(n)=$id " +
+            "RETURN count(p)")
+    int queryPersonOfficership(Long id);
+    //company
+    //scale
+    @Query("match (n:ns4__Organization)-[]-(o)-[]-(p:ns8__Person) " +
+            "where id(n)=$id and " +
+            "(o:ns8__TenureInOrganization or o:ns8__Directorship or o:ns8__Officership) " +
+            "return count(p)")
+    int queryCompanyScale(Long id);
 
 
     //Deprecated

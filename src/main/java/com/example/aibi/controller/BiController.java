@@ -49,14 +49,37 @@ public class BiController {
         }
         return relationshipEntities;
     }
-
     //获得分数
-    private int getScore(int i){
-        return i;
+    private double getScore(NodeEntity nodeEntity) throws UnsupportedEncodingException {
+        String type="";
+        for (String label : nodeEntity.labels) {
+            if(label.equals("ns8__Person")){
+                type="ns8__Person";
+                break;
+            }
+            if(label.equals("ns4__Organization")){
+                type="ns4__Organization";
+                break;
+            }
+        }
+        if (type.equals("ns8__Person")){
+            Person person=new Person();
+            person.setCountAca(neo4jDao.queryPersonAQ(nodeEntity.getId()));
+            person.setCountDirec(neo4jDao.queryPersonDirectorship(nodeEntity.getId()));
+            person.setCountTenure(neo4jDao.queryPersonTenure(nodeEntity.getId()));
+            person.setCountOfficer(neo4jDao.queryPersonOfficership(nodeEntity.getId()));
+            ruleService.rule(person);
+            return person.getPoint();
+        }else if(type.equals("ns4__Organization")){
+            Company company=new Company();
+            company.setPersonScale(neo4jDao.queryCompanyScale(nodeEntity.getId()));
+            ruleService.rule(company);
+            return company.getPoint();
+        }else return 0;
     }
 
     //pathvalue到Node and relation
-    private NodeARelationship pathToReuslt(List<PathValue> list) {
+    private NodeARelationship pathToReuslt(List<PathValue> list) throws UnsupportedEncodingException {
         Set<NodeEntity> nodeEntities = new HashSet<>();
         Set<RelationshipEntity> relationshipEntities = new HashSet<>();
         for (PathValue pathValue : list) {
@@ -71,7 +94,7 @@ public class BiController {
                 for (String s : keys) {
                     hashMap.put(s, node.get(s).toString());
                 }
-                hashMap.put("score",getScore((int) node.id()));
+                hashMap.put("score", getScore(nodeEntity));
                 nodeEntity.setProperties(hashMap);
                 nodeEntities.add(nodeEntity);
             }
@@ -112,23 +135,11 @@ public class BiController {
     }
 
     // personPoint
-    @RequestMapping(value = "/personTest")
-    public Result persontest() throws UnsupportedEncodingException {
-        Person person = new Person();
-        person.setCountAca(2);
-        person.setCountDirec(3);
-        person.setCountOfficer(3);
-        person.setCountTenure(3);
-        Company company = new Company();
-        company.setPersonScale(241);
-        ruleService.rule(company);
-        System.out.println(company.getPoint());
-        return new Result().builder().code(200).msg("get data").data(null).build();
-    }
+
 
     //query0
     @RequestMapping(value = "/query0/node/{label}/{id}")
-    public Result query0(@PathVariable Long id, @PathVariable String label) {
+    public Result query0(@PathVariable Long id, @PathVariable String label) throws UnsupportedEncodingException {
         List<PathValue> list;
         if (label.equals(NodeUtils.labels.get(0))) {
             list = neo4jDao.query0person(id);
@@ -157,7 +168,7 @@ public class BiController {
     public Result query1(@PathVariable int limit,
                          @PathVariable String nodeType,
                          @PathVariable String type,
-                         @PathVariable String typeValue) {
+                         @PathVariable String typeValue) throws UnsupportedEncodingException {
         limit = Math.min(100, limit);
         List<PathValue> list = null;
         if (nodeType.equals("ns8__Person")) {
@@ -188,20 +199,20 @@ public class BiController {
                          @PathVariable String type1,
                          @PathVariable String type2,
                          @PathVariable String typeValue1,
-                         @PathVariable String typeValue2) {
+                         @PathVariable String typeValue2) throws UnsupportedEncodingException {
         limit = Math.min(100, limit);
         List<PathValue> list;
-        if(type1.equals(type2)){
-            if (type1.equals("ns8__Person")){
-                list=neo4jDao.query2SamePerson(typeValue1,typeValue2,limit);
-            }else {
-                list=neo4jDao.query2SameOrganization(typeValue1,typeValue2,limit);
+        if (type1.equals(type2)) {
+            if (type1.equals("ns8__Person")) {
+                list = neo4jDao.query2SamePerson(typeValue1, typeValue2, limit);
+            } else {
+                list = neo4jDao.query2SameOrganization(typeValue1, typeValue2, limit);
             }
-        }else {
-            if (type1.equals("ns8__Person")){
-                list=neo4jDao.query2Diff(typeValue2,typeValue1,limit);
-            }else {
-                list=neo4jDao.query2Diff(typeValue1,typeValue2,limit);
+        } else {
+            if (type1.equals("ns8__Person")) {
+                list = neo4jDao.query2Diff(typeValue2, typeValue1, limit);
+            } else {
+                list = neo4jDao.query2Diff(typeValue1, typeValue2, limit);
             }
         }
         NodeARelationship nodeARelationship;
@@ -218,25 +229,24 @@ public class BiController {
     public Result query3(@PathVariable String type1,
                          @PathVariable String type2,
                          @PathVariable String typeValue1,
-                         @PathVariable String typeValue2) {
+                         @PathVariable String typeValue2) throws UnsupportedEncodingException {
         if ((type1.equals("ns4__Organization") || type1.equals("ns8__Person"))
-        &&(type2.equals("ns4__Organization") || type2.equals("ns8__Person"))){
+                && (type2.equals("ns4__Organization") || type2.equals("ns8__Person"))) {
             List<PathValue> list = null;
-            if(type1.equals(type2)){
-                if(type1.equals("ns8__Person")){
-                    list=neo4jDao.query3ShortestPathPerson(typeValue1,typeValue2);
-                }
-                else {
+            if (type1.equals(type2)) {
+                if (type1.equals("ns8__Person")) {
+                    list = neo4jDao.query3ShortestPathPerson(typeValue1, typeValue2);
+                } else {
                     list = neo4jDao.query3ShortestPathOrganization(typeValue1, typeValue2);
                 }
-            }else {
-                if (type1.equals("ns8__Person")){
+            } else {
+                if (type1.equals("ns8__Person")) {
                     list = neo4jDao.query3ShortestPath(typeValue1, typeValue2);
-                }else {
+                } else {
                     list = neo4jDao.query3ShortestPath(typeValue2, typeValue1);
                 }
             }
-            NodeARelationship nodeARelationship=pathToReuslt(list);
+            NodeARelationship nodeARelationship = pathToReuslt(list);
             return new Result().builder().code(200).msg("get data").data(nodeARelationship).build();
         }
         return new Result().builder().code(400).msg("不允许的输入").data(null).build();
@@ -352,21 +362,21 @@ public class BiController {
 
     //跳跃查询
     @RequestMapping(value = "/step/{permId}/{step}", method = RequestMethod.GET)
-    public Result<Object> getStep(@PathVariable String permId, @PathVariable int step) {
+    public Result<Object> getStep(@PathVariable String permId, @PathVariable int step) throws UnsupportedEncodingException {
         List<PathValue> list = neo4jDao.getStep(permId, step);
         NodeARelationship nodeARelationship = pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
     }
 
     @RequestMapping(value = "/organization/person/{permId}")
-    public Result<Object> getPersonToOrganization(@PathVariable String permId) {
+    public Result<Object> getPersonToOrganization(@PathVariable String permId) throws UnsupportedEncodingException {
         List<PathValue> list = neo4jDao.getPersonToOrganization(permId);
         NodeARelationship nodeARelationship = pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
     }
 
     @RequestMapping(value = "/person/organization/{permId}")
-    public Result<Object> getOrganizationToPerson(@PathVariable String permId) {
+    public Result<Object> getOrganizationToPerson(@PathVariable String permId) throws UnsupportedEncodingException {
         List<PathValue> list = neo4jDao.getOrganizationToPerson(permId);
         NodeARelationship nodeARelationship = pathToReuslt(list);
         return new Result().builder().code(200).data(nodeARelationship).msg("yes").build();
