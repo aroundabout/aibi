@@ -10,7 +10,7 @@ function Double fx(Integer num,Integer a,Integer b){
         return 1d;
     }
     if(num<a){
-        return 0d;
+        return 0.5d;
     }
     return (double)(num-a)/(double)(b-a);
 }
@@ -26,7 +26,8 @@ rule "Person_point"
         int direc = $person.getCountDirec();
         int officer = $person.getCountOfficer();
         int tenure = $person.getCountTenure();
-        double point = (fx(aca,1,3)+fx(direc,1,3)+fx(officer,1,4)+fx(tenure,1,4))/4;
+        int rank = $person.getRank();
+        double point = (fx(aca,1,3)+fx(direc,1,3)+fx(officer,1,4)+fx(tenure,1,4)+fx(rank,1,100))/4;
         $person.setPoint(point);
         update($person)
         System.out.println("匹配到规则person");

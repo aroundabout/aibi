@@ -59,7 +59,7 @@ public class BiController {
                 String s = (String) nodeEntity.getProperties().get("ns8__rank");
                 s=s.replace("\"","");
                 int rank=Integer.parseInt(s);
-                sum += rank;
+                sum += 100-rank;
             }
         }
         for (NodeEntity nodeEntity : oR) {
@@ -67,7 +67,7 @@ public class BiController {
                 String s = (String) nodeEntity.getProperties().get("ns8__rank");
                 s=s.replace("\"","");
                 int rank=Integer.parseInt(s);
-                sum += rank;
+                sum += 100-rank;
             }
         }
         return sum;
